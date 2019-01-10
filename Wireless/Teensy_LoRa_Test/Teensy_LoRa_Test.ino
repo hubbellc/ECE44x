@@ -12,7 +12,7 @@
 /*--------------------------------------------------------------------------------------
   Definitions
   --------------------------------------------------------------------------------------*/
-int count = 0;
+
 
 
 void setup() 
@@ -48,9 +48,8 @@ void setup()
     Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
     Serial1.write("AT&W\n"); // saves configuration 
     Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
-    delay(4000); // 3.1 second delay for reset to take place
+    delay(3100); // 3.1 second delay for reset to take place
     Serial1.write("AT+SD\n"); // configures to send data (all data received is transmitted)
-    
 
     Serial.println("Programming complete");
   }
@@ -58,21 +57,11 @@ void setup()
   {
     Serial.println("Error connecting to Mdot");
   }
-
-  delay(3000);
-  Serial1.flush();
-  Serial.flush();
 }
 
 void loop() 
 {
   // Mdot is already configured, so can just start sending in a loop with a delay, to see if receiver will pick it up
-  Serial1.write("\nHello World");
-  Serial1.write(count);
-  count = count + 1;
-  /*if(Serial1.peek() != -1)
-  {
-    Serial.write(Serial1.read());
-  }*/
-  delay(3000); // 3 second delay
+  Serial1.println("Hello World\n");
+  delay(3000); // 30 second delay
 }
