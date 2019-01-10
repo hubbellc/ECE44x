@@ -60,6 +60,13 @@ void setup()
   }
 
   delay(3000);
+  // clear input buffers
+  while (Serial.available() > 0 ) {
+    Serial.read();
+  }
+  while (Serial1.available() > 0 ) {
+    Serial1.read();
+  }
   Serial1.flush();
   Serial.flush();
 }
@@ -67,12 +74,13 @@ void setup()
 void loop() 
 {
   // Mdot is already configured, so can just start sending in a loop with a delay, to see if receiver will pick it up
-  Serial1.write("\nHello World");
-  Serial1.write(count);
-  count = count + 1;
+  //Serial1.write("\nHello World");
+  //Serial1.write(count);
+  //count = count + 1;
   /*if(Serial1.peek() != -1)
   {
     Serial.write(Serial1.read());
   }*/
-  delay(3000); // 3 second delay
+  if (Serial1.available()) Serial.write(Serial1.read());
+  //delay(3000); // 3 second delay
 }
