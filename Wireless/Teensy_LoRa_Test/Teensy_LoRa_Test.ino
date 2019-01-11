@@ -13,6 +13,8 @@
   Definitions
   --------------------------------------------------------------------------------------*/
 int count = 0;
+String temp = "";
+int x,y,z;
 
 
 void setup() 
@@ -69,18 +71,27 @@ void setup()
   }
   Serial1.flush();
   Serial.flush();
+
+  // shake hand
+  delay(1000); 
+  Serial1.write("Transmitter1\n");
 }
 
 void loop() 
 {
   // Mdot is already configured, so can just start sending in a loop with a delay, to see if receiver will pick it up
-  //Serial1.write("\nHello World");
-  //Serial1.write(count);
-  //count = count + 1;
-  /*if(Serial1.peek() != -1)
-  {
-    Serial.write(Serial1.read());
-  }*/
-  if (Serial1.available()) Serial.write(Serial1.read());
+  if(Serial1.peek() != -1)
+  {   
+    temp = Serial1.readString();
+    Serial.println(temp); // for debug
+    // decide what to do based on data
+    //TODO, fix
+    if (sscanf(temp, "%d,%d,%d", &x, &y, &z) == 3) 
+    {
+      Serial.println(x);
+      Serial.println(y);
+      Serial.println(z);
+    }
+  //if (Serial1.available()) Serial.write(Serial1.read());
   //delay(3000); // 3 second delay
 }
