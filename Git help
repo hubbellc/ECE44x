@@ -1,0 +1,5 @@
+git pull - pull from master
+git status - see status of files, updates to "ready to commit", allows you to add more files to git
+git add _____ - add new files to git
+git commit -m "_____" - commits all green files in status to github with the comment in quotes
+git push - finally, push it
