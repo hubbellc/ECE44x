@@ -1,0 +1,19 @@
+The housing must have connectors for anything going in or out. I planned to have a slanted roof, and a sliding front door. It also has a gap for light to come in for the light sensor on the right side.
+
+Besides that, applicable engineering requiremets are: 
+The system should not be affected by high temperatures
+	The device will remain fully operational for 24 hours in a max of 50C 
+The system should not be affected by high humidity
+	The device will remain fully operational for 24 hours in a max of 95% humidity
+Any ventilation should be smaller than a gecko
+	No internal access hole will exceed 2.5mm in diameter
+The transmitter will mount on a post
+	9 out of 10 people will be able to mount and remove the sensor from a wooden post in less than 5 minutes
+The system should be aesthetically inoffensive
+	9/10 people who are unfamiliar with the project will state that the transmitter and receiver blend into the Taiwanese environment
+
+The defined interfaces are: 
+No hole larger than 2.5mm
+Must have two external power hookups
+Must mount on a wooden post
+Must have an external antenna hookup
