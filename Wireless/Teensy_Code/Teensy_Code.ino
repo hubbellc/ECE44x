@@ -61,10 +61,10 @@ void setup()
   pinMode(A14, INPUT);
 
   // for sensing
-  if (!bme.begin()) { 
-  Serial.println("Could not find a valid BME280 sensor, check wiring!"); 
-  while (1); 
-  } 
+  //if (!bme.begin()) { 
+  //Serial.println("Could not find a valid BME280 sensor, check wiring!"); 
+  //while (1); 
+  //} 
 
   delay(3000); // 3 second delay
 
@@ -109,10 +109,10 @@ void loop()
   if((long)(millis() - rolltime) >= 0)
   {    
     // get measurements
-    bme.readSensor(); 
-    airP = bme.getPressure_MB();
-    humidity = bme.getHumidity();
-    temperature = bme.getTemperature_C();
+    //bme.readSensor(); 
+    //airP = bme.getPressure_MB();
+    //humidity = bme.getHumidity();
+    //temperature = bme.getTemperature_C();
     NO2 = analogRead(A14);
     
     // save data
