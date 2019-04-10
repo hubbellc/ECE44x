@@ -35,7 +35,7 @@ const char * file_string = "raitong.csv"; // <<------------------- set file here
 unsigned long rolltime = millis() + TIMERMIN;
 
 // for datakeeping
-const String header = "Date,Temperature,Humidity,Air Pressure,Light,NO2,CH4";
+const String header = "Date,Temperature,Humidity,Air Pressure,Lux,NO2,CH4";
 int temperature = 12;
 int humidity = 34;
 int airP = 56;
