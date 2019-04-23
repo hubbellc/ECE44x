@@ -1,12 +1,15 @@
+// Sandbox code to test the functionality of the intellegent power source logic
+
 #include <Adafruit_INA219.h>
 #include <Wire.h>
 
 int Relay1 =7;
 int val1=1;
 Adafruit_INA219 ina219;
+
 void setup() {
   
-   Serial.begin(115200);
+ Serial.begin(115200);
  ina219.begin();
  ina219.setCalibration_16V_400mA();
 
