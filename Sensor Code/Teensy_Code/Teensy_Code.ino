@@ -1,3 +1,5 @@
+
+
 // THIS IS THE MAIN CODE
 
 // Program talks to a number of external sensors, compiles data, stores it locally on an SD card, and wirelessly transmits it.
@@ -13,6 +15,9 @@
 #include <Wire.h> 
 #include "cactus_io_BME280_I2C.h" 
 #include <Adafruit_INA219.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_TSL2561_U.h>
 
 /*--------------------------------------------------------------------------------------
   Definitions
@@ -61,6 +66,9 @@ Adafruit_INA219 ina219;
 // for BME sensor
 BME280_I2C bme(0x76); // I2C using address 0x76
 
+// for lux sensor
+Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
+
 // for NO2 sensor
 float Voff=.5;
 int Vcc= 3.3;
@@ -107,6 +115,23 @@ void setup()
 
   Vgas0=zeroOut(10); //Call helper function which takes mean of gas
 
+  //Lux setup:
+  tsl.enableAutoRange(true);  
+  /* Changing the integration time gives you better sensor resolution (402ms = 16-bit data) */
+  tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);      /* fast but low resolution */
+  // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS);  /* medium resolution and speed   */
+  // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */ 
+  /* Initialise the sensor */
+  //use tsl.begin() to default to Wire, 
+  //tsl.begin(&Wire2) directs api to use Wire2, etc.
+  if(!tsl.begin())
+  {
+    /* There was a problem detecting the TSL2561 ... check your connections */
+    Serial.print("Ooops, no TSL2561 detected ... Check your wiring or I2C ADDR!");
+    while(1);
+  }
+
+  
   delay(3000); // 3 second delay ...TODO, refine
 
   // program the Mdot
@@ -173,7 +198,14 @@ void loop()
     humidity = bme.getHumidity();
     temperature = bme.getTemperature_C();
     NO2 = getNO2(10);
-    
+
+    sensors_event_t event;
+    tsl.getEvent(&event);
+    if (event.light)
+    {
+       light = event.light;
+       //Serial.print(event.light); Serial.println(" lux");
+    }
     // save data
     saveData();
 
