@@ -43,8 +43,8 @@ const int chipSelect = BUILTIN_SDCARD;
 const char * file_string = "raitong.csv"; // << set file here!! (NOTE: name cannot include a "_"...26 character letters only)
 
 // for timekeeping
-#define MINELAPSED .005 // <<------------------- set frequency for reading sensors here!!
-#define LOOPTIME .005 // 30 seconds to try
+#define MINELAPSED .25 // <<------------------- set frequency for reading sensors here!!
+#define LOOPTIME .25 // 30 seconds to try
 #define TIMERMIN (1000UL * 60 * MINELAPSED)
 #define TIMEOUT (1000UL * 60 * LOOPTIME)
 unsigned long rolltime = millis() + TIMERMIN;
@@ -132,7 +132,7 @@ void setup()
   while(!tsl.begin() && millis() - starttime <= TIMEOUT){}
   if(!tsl.begin())
   {
-    Serial.println("Ooops, no TSL2561 detected ... Check your wiring or I2C ADDR!");
+    Serial.println("Could not find a valid light sensor, check wiring!");
     error = 1;
   }
   
@@ -152,7 +152,7 @@ void setup()
   Serial.flush();
 
   // small delay needed
-  delay(300);
+  delay(1000);
 
   // get the current time
   getTime();
@@ -281,7 +281,7 @@ void progMdot()
     Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
     Serial1.write("AT&W\n"); // saves configuration 
     Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
-    delay(4000); // 3.1 second delay for reset to take place
+    delay(3000); // 3 second delay for reset to take place
     Serial1.write("AT+SD\n"); // configures to send data (all data received is transmitted)
     
     Serial.println("mDot programming complete");
@@ -299,8 +299,9 @@ void getTime()
   // loop until handshake is complete, or timeout
   starttime = millis();
   
-  while((year() < 2019) && (millis() - starttime <= TIMEOUT)) // guaranteed to work, year wont go back
+  while((year() < 2019) && (millis() - starttime <= (TIMEOUT * 2))) // guaranteed to work, year wont go back
   {
+    delay(300);
     Serial1.write("Transmitter1\n");
     temp = Serial1.readString();
     
