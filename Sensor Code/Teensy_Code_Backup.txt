@@ -1,5 +1,3 @@
-
-
 // THIS IS THE MAIN CODE
 
 // Program talks to a number of external sensors, compiles data, stores it locally on an SD card, and wirelessly transmits it.
@@ -15,20 +13,16 @@
 #include <Wire.h> 
 #include "cactus_io_BME280_I2C.h" 
 #include <Adafruit_INA219.h>
-#include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_TSL2561_U.h>
-#include "ULP.h"
 
 /*--------------------------------------------------------------------------------------
   Definitions
   --------------------------------------------------------------------------------------*/
 // pins used
-#define Relay1 34
+#define Relay1 7
 #define builtin_LED 13
-#define tempAN A19
-#define VrefAN A18
-#define VgasAN A14
+#define tempAN A0
+#define VrefAN A1
+#define VgasAN A2
 
 // general
 String temp = "";
@@ -43,8 +37,8 @@ const int chipSelect = BUILTIN_SDCARD;
 const char * file_string = "raitong.csv"; // << set file here!! (NOTE: name cannot include a "_"...26 character letters only)
 
 // for timekeeping
-#define MINELAPSED .005 // <<------------------- set frequency for reading sensors here!!
-#define LOOPTIME .005 // 30 seconds to try
+#define MINELAPSED .2 // <<------------------- set frequency for reading sensors here!!
+#define LOOPTIME .5 // 30 seconds to try
 #define TIMERMIN (1000UL * 60 * MINELAPSED)
 #define TIMEOUT (1000UL * 60 * LOOPTIME)
 unsigned long rolltime = millis() + TIMERMIN;
@@ -56,7 +50,7 @@ int temperature = 12;
 int humidity = 34;
 int airP = 56;
 int light = 78; //TODO, Samir needs to write the framework still
-int NO2_data = 91;
+int NO2 = 91;
 int CH4 = 23; //TODO, Samir needs to write the framework still
 
 // for power
@@ -66,9 +60,6 @@ Adafruit_INA219 ina219;
 
 // for BME sensor
 BME280_I2C bme(0x76); // I2C using address 0x76
-
-// for lux sensor
-Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 
 // for NO2 sensor
 float Voff=.5;
@@ -83,7 +74,6 @@ unsigned long tme=0,i=0,j=0;
 unsigned long Avge=0;
 unsigned long vAvg=0;
 int G0 = 0;
-NO2 sensor1(tempAN, VgasAN, sencon);
 
 void setup() 
 {
@@ -95,7 +85,6 @@ void setup()
 
   // for status LED
   pinMode(builtin_LED, OUTPUT);
-  digitalWrite(builtin_LED, HIGH);
 
   // for power
   pinMode(Relay1, OUTPUT);
@@ -118,24 +107,6 @@ void setup()
 
   Vgas0=zeroOut(10); //Call helper function which takes mean of gas
 
-  //Lux setup:
-  tsl.enableAutoRange(true);  
-  /* Changing the integration time gives you better sensor resolution (402ms = 16-bit data) */
-  tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);      /* fast but low resolution */
-  // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS);  /* medium resolution and speed   */
-  // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */ 
-  /* Initialise the sensor */
-  //use tsl.begin() to default to Wire, 
-  //tsl.begin(&Wire2) directs api to use Wire2, etc.
-
-  starttime = millis();
-  while(!tsl.begin() && millis() - starttime <= TIMEOUT){}
-  if(!tsl.begin())
-  {
-    Serial.println("Ooops, no TSL2561 detected ... Check your wiring or I2C ADDR!");
-    error = 1;
-  }
-  
   delay(3000); // 3 second delay ...TODO, refine
 
   // program the Mdot
@@ -200,16 +171,9 @@ void loop()
     bme.readSensor(); 
     airP = bme.getPressure_MB();
     humidity = bme.getHumidity();
-    temperature = sensor1.getTemp(1,"F");
-    NO2_data = getNO2(10);
-
-    sensors_event_t event;
-    tsl.getEvent(&event);
-    if (event.light)
-    {
-       light = event.light;
-       //Serial.print(event.light); Serial.println(" lux");
-    }
+    temperature = bme.getTemperature_C();
+    NO2 = getNO2(10);
+    
     // save data
     saveData();
 
@@ -217,6 +181,10 @@ void loop()
     rolltime += TIMERMIN;
 
     // status update
+    digitalWrite(builtin_LED, HIGH);
+    delay(500);
+    digitalWrite(builtin_LED, LOW);
+    delay(500);
     digitalWrite(builtin_LED, HIGH);
     delay(500);
     digitalWrite(builtin_LED, LOW);
@@ -234,12 +202,12 @@ void loop()
   if (voltage<=5)
   {
     val1 = 1;
-    digitalWrite(Relay1, LOW);
+    digitalWrite(Relay1, HIGH);
   }
   if (voltage>=15)
   {
     val1=0;
-    digitalWrite(Relay1, HIGH);
+    digitalWrite(Relay1, LOW);
   }
 }
 
@@ -299,7 +267,7 @@ void getTime()
   // loop until handshake is complete, or timeout
   starttime = millis();
   
-  while((year() < 2019) && (millis() - starttime <= TIMEOUT)) // guaranteed to work, year wont go back
+  while((year() < 2019) && millis() - starttime <= TIMEOUT) // guaranteed to work, year wont go back
   {
     Serial1.write("Transmitter1\n");
     temp = Serial1.readString();
@@ -362,7 +330,7 @@ void saveData()
   toSend += ",";
   toSend += light;
   toSend += ",";
-  toSend += NO2_data;
+  toSend += NO2;
   toSend += ",";
   toSend += CH4;
 
