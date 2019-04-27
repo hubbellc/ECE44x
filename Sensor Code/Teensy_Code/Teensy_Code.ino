@@ -19,7 +19,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_TSL2561_U.h>
 #include <Adafruit_AM2315.h>
-//#include "ULP.h"
+#include "ULP.h"
 
 /*--------------------------------------------------------------------------------------
   Definitions
@@ -67,8 +67,10 @@ Adafruit_INA219 ina219;
 
 // for BME sensor
 BME280_I2C bme(0x76); // I2C using address 0x76
+
 //for am2315 (temp/hum)
 Adafruit_AM2315 am2315;
+
 // for lux sensor
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 
@@ -157,11 +159,11 @@ void setup()
   delay(1000);
 
   // get the current time
-  //getTime();
-//Serial.println("time made it");
+  getTime();
+
   // configure SD card
   configSD(); // needs to be after time, uses time to init!
-Serial.println("SD made it");
+
   //flash to tell status
   if(error) // three quick flashes
   {
@@ -362,7 +364,7 @@ void saveData()
   toSend += ",";
   toSend += humidity;
   toSend += ",";
-  toSend += 20;
+  toSend += airP;
   toSend += ",";
   toSend += light;
   toSend += ",";
