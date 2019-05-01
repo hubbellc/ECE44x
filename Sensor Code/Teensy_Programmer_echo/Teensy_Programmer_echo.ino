@@ -19,13 +19,23 @@ AT&V = Status update, check if programming worked (it did)
 
 void setup() 
 {
-  int response;
+  //int response;
   
   // begin comm to computer for responses (USB)
   Serial.begin(115200);
 
   // begin comm to Mdot (port 0 and 1)
   Serial1.begin(115200);
+
+//  Serial1.write("ATZ\n");
+//  delay(4000);
+//  Serial1.write("AT+NJM=3\n"); // sets network join mode to peer to peer
+//  Serial1.write("AT+NA=00112233\n"); // sets network address
+//  Serial1.write("AT+NSK=00112233001122330011223300112233\n"); // sets network session key
+//  Serial1.write("AT+DSK=33221100332211003322110033221100\n"); // sets data session key
+//  Serial1.write("AT+ACK=8\n"); // turn on ACK, and set to max retries
+//  Serial1.write("AT+TXDR=DR3\n"); // sets the transmit data rate (AS 923) //TODO, adjust to get better range!
+//  Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
 }
 
 void loop() 
