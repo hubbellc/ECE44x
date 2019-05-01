@@ -9,16 +9,16 @@
 #include "cactus_io_BME280_I2C.h"
 
 // Create the BME280 object
-BME280_I2C bme;              // I2C using default 0x77 
-// or BME280_I2C bme(0x76);  // I2C using address 0x76
+//BME280_I2C bme;              // I2C using default 0x77 
+BME280_I2C bme(0x76);  // I2C using address 0x76
 
 void setup() {
+  delay(200);
   Serial.begin(9600);
   Serial.println("Bosch BME280 Barometric Pressure - Humidity - Temp Sensor | cactus.io"); 
 
   if (!bme.begin()) {
     Serial.println("Could not find a valid BME280 sensor, check wiring!");
-    while (1);
   }
 
   bme.setTempCal(-1);
