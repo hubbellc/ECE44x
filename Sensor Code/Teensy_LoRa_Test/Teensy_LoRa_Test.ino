@@ -45,11 +45,12 @@ void setup()
     Serial1.write("AT+NA=00112233\n"); // sets network address
     Serial1.write("AT+NSK=00112233001122330011223300112233\n"); // sets network session key
     Serial1.write("AT+DSK=33221100332211003322110033221100\n"); // sets data session key
-    Serial1.write("AT+TXDR=DR7\n"); // sets the transmit data rate (AS 923) //TODO, adjust to get better range!
-    Serial1.write("AT+TXF=926000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
-    Serial1.write("AT&W\n"); // saves configuration 
-    Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
-    delay(4000); // delay for reset to take place
+    Serial1.write("AT+TXDR=DR3\n"); // sets the transmit data rate (AS 923) //TODO, adjust to get better range!
+    Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
+    Serial1.write("AT+ACK=8\n");
+//    Serial1.write("AT&W\n"); // saves configuration 
+//    Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
+//    delay(4000); // delay for reset to take place
     Serial1.write("AT+SD\n"); // configures to send data (all data received is transmitted)
 
     Serial.println("Programming complete");
@@ -59,7 +60,7 @@ void setup()
     Serial.println("Error connecting to Mdot");
   }
 
-  //delay(3000);
+  delay(3000);
   // clear input buffers
   while (Serial.available() > 0 ) {
     Serial.read();
@@ -71,7 +72,7 @@ void setup()
   Serial.flush();
 
   // shake hand
-  delay(100); 
+  delay(1000); 
   Serial1.write("Transmitter1\n");
 
   //flash to know on

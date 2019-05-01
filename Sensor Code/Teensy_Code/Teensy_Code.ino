@@ -1,5 +1,3 @@
-
-
 // THIS IS THE MAIN CODE
 
 // Program talks to a number of external sensors, compiles data, stores it locally on an SD card, and wirelessly transmits it.
@@ -45,7 +43,7 @@ const char * file_string = "raitong.csv"; // << set file here!! (NOTE: name cann
 
 // for timekeeping
 #define MINELAPSED .25 // <<------------------- set frequency for reading sensors here!!
-#define LOOPTIME .25 // 30 seconds to try
+#define LOOPTIME .05 // 30 seconds to try
 #define TIMERMIN (1000UL * 60 * MINELAPSED)
 #define TIMEOUT (1000UL * 60 * LOOPTIME)
 unsigned long rolltime = millis() + TIMERMIN;
@@ -139,11 +137,11 @@ void setup()
     Serial.println("Could not find a valid light sensor, check wiring!");
     error = 1;
   }
-  
-  delay(3000); // 3 second delay ...TODO, refine
 
   // program the Mdot
   progMdot();
+
+  delay(3000); // 3 second delay ...TODO, refine
   
   // clear input buffers
   while (Serial.available() > 0 ) {
@@ -203,8 +201,8 @@ void loop()
     // get measurements
     bme.readSensor(); 
     airP = bme.getPressure_MB();
-    //humidity = bme.getHumidity();
-//    temperature = sensor1.getTemp(1,"F");
+    humidity = bme.getHumidity();
+    temperature = sensor1.getTemp(1,"F");
     NO2_data = getNO2(10);
     humidity=am2315.readHumidity();
     temperature=am2315.readTemperature();
@@ -215,6 +213,7 @@ void loop()
        light = event.light;
        //Serial.print(event.light); Serial.println(" lux");
     }
+    
     // save data
     saveData();
 
@@ -284,9 +283,6 @@ void progMdot()
     Serial1.write("AT+ACK=8\n"); // turn on ACK, and set to max retries
     Serial1.write("AT+TXDR=DR3\n"); // sets the transmit data rate (AS 923) //TODO, adjust to get better range!
     Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
-    Serial1.write("AT&W\n"); // saves configuration 
-    Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
-    delay(3000); // 3 second delay for reset to take place
     Serial1.write("AT+SD\n"); // configures to send data (all data received is transmitted)
     
     Serial.println("mDot programming complete");
@@ -303,24 +299,39 @@ void getTime()
 {
   // loop until handshake is complete, or timeout
   starttime = millis();
-  
-  while((year() < 2019) && (millis() - starttime <= (TIMEOUT * 2))) // guaranteed to work, year wont go back
+
+  //TODO, Caleb fix later!!
+  while((year() < 2019) && (millis() - starttime <= (TIMEOUT))) // guaranteed to work, year wont go back
   {
-    delay(300);
     Serial1.write("Transmitter1\n");
+    
+//    while(Serial1.peek() == -1)
+//    {   
+//      temp = Serial1.readString();
+//    }
+
     temp = Serial1.readString();
     
-    // get the time
-    timeHold[0] = ((temp.substring(0,2)).toInt()); // Month
-    timeHold[1] = ((temp.substring(3,5)).toInt()); // Day
-    timeHold[2] = ((temp.substring(6,10)).toInt()); // Year
-    timeHold[3] = ((temp.substring(11,13)).toInt()); // Hour
-    timeHold[4] = ((temp.substring(14,16)).toInt()); // Minute
-    timeHold[5] = ((temp.substring(17,19)).toInt()) + 2; // Second, has minor adjustment to account for transmission delay
-    
-    // Sets all time info
-    setTime(timeHold[3], timeHold[4], timeHold[5], timeHold[1], timeHold[0], timeHold[2]);
+    //Serial.print("got time:");
+    //Serial.print(temp.length());
+    //Serial.println(temp);
+
+    if(temp.length() == 19)
+    {
+      // get the time
+      timeHold[0] = ((temp.substring(0,2)).toInt()); // Month
+      timeHold[1] = ((temp.substring(3,5)).toInt()); // Day
+      timeHold[2] = ((temp.substring(6,10)).toInt()); // Year
+      timeHold[3] = ((temp.substring(11,13)).toInt()); // Hour
+      timeHold[4] = ((temp.substring(14,16)).toInt()); // Minute
+      timeHold[5] = ((temp.substring(17,19)).toInt()) + 2; // Second, has minor adjustment to account for transmission delay
+  
+      Serial.println("set time");
+      // Sets all time info
+      setTime(timeHold[3], timeHold[4], timeHold[5], timeHold[1], timeHold[0], timeHold[2]);
+    }
   }
+  //Serial.println("got it!");
 
   // if unsuccessful, use RTC
   // TODO, check!! Use File > Examples > Time > TimeTeensy3 
