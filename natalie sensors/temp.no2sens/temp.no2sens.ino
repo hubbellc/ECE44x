@@ -18,12 +18,12 @@
 
 // These constants won't change.  They're used to give names to the pins used and to the sensitivity factors of the sensors:
 
-const int C1 = A0;
-const int T1 = A3;
+const int C1 = A15;
+const int T1 = A16;
 //const int C2 = A1;
 //const int T2 = A4;
 
-const float Sf1 =-26.69; //nA/ppm
+const float Sf1 =26.69; //nA/ppm
 
 
 float temp1;
@@ -47,7 +47,7 @@ void setup() {
 }
 
 void loop() {
-  temp1 = sensor1.getTemp(1);//the  temp in celcius 
+  temp1 = sensor1.getTemp(10);//the  temp in celcius 
     
   Serial.print(temp1);
   Serial.print(", ");

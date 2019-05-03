@@ -12,22 +12,21 @@
 #include <SPI.h>
 #include <Wire.h> 
 #include "cactus_io_BME280_I2C.h" 
-#include <Adafruit_INA219.h>
+#include <Adafruit_INA219.h> // Current sensor library
 #include <Wire.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_TSL2561_U.h>
-#include <Adafruit_AM2315.h>
+#include <Adafruit_Sensor.h> // Light sensor library
+#include <Adafruit_TSL2561_U.h> // Light sensor libaray...Can use other i2c!!
 #include "ULP.h"
 
 /*--------------------------------------------------------------------------------------
   Definitions
   --------------------------------------------------------------------------------------*/
 // pins used
-#define Relay1 34
+#define Relay1 33 
 #define builtin_LED 13
-#define tempAN A19
-#define VrefAN A18
-#define VgasAN A14
+#define C1 A15 //TODO, check!
+#define T1 A16 //TODO, check!
+#define CH4_pin A6
 
 // general
 String temp = "";
@@ -52,11 +51,11 @@ unsigned long starttime = millis();
 // for datakeeping
 const String header = "Date,Temperature,Humidity,Air Pressure,Lux,NO2,CH4";
 int temperature = 12;
-int humidity = 34;
+int humidity = 0;
 int airP = 56;
-int light = 78; //TODO, Samir needs to write the framework still
+int light = 78;
 int NO2_data = 91;
-int CH4 = 23; //TODO, Samir needs to write the framework still
+int CH4 = 23;
 
 // for power
 int val1=1;
@@ -66,26 +65,15 @@ Adafruit_INA219 ina219;
 // for BME sensor
 BME280_I2C bme(0x76); // I2C using address 0x76
 
-//for am2315 (temp/hum)
-Adafruit_AM2315 am2315;
-
 // for lux sensor
 Adafruit_TSL2561_Unified tsl = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 
 // for NO2 sensor
-float Voff=.5;
-int Vcc= 3.3;
-int sencon= 26.69;
-int TIA= 499;
-float M= 26.69*499*(10^-9)*(10^3);
-float Vgas0 = 0;
-float Vgas = 0;
-float Conc = 0;
-unsigned long tme=0,i=0,j=0;
-unsigned long Avge=0;
-unsigned long vAvg=0;
-int G0 = 0;
-//NO2 sensor1(tempAN, VgasAN, sencon);
+const float Sf1 =-26.69; //nA/ppm
+float temp1;
+float TZero;
+float Vzero1;
+NO2 sensor1(C1, T1, Sf1);
 
 void setup() 
 {
@@ -100,16 +88,18 @@ void setup()
   digitalWrite(builtin_LED, HIGH);
 
   // for power
-  pinMode(Relay1, OUTPUT);
-  ina219.begin();
+  //pinMode(Relay1, OUTPUT);
+  //TODO, change later
+  //digitalWrite(Relay1, HIGH); //TODO, remove!
+  ina219.begin(&Wire1);
   ina219.setCalibration_16V_400mA();
-  if(!ina219.getBusVoltage_V()) // TODO, how know if fail??
+  if((int)ina219.getBusVoltage_V() == 32) // TODO, how know if fail??
   {
     Serial.println("Could not find a valid current sensor, check wiring!"); 
     error = 1;
   }
 
-  // for sensing
+  // for sensing humidity and air pressure
   starttime = millis();
   while(!bme.begin() && millis() - starttime <= TIMEOUT){}
   if(!bme.begin())
@@ -117,8 +107,10 @@ void setup()
     Serial.println("Could not find a valid BME280 sensor, check wiring!");
     error = 1;
   }
+  bme.setTempCal(-2);// Calibration
 
-  Vgas0=zeroOut(10); //Call helper function which takes mean of gas
+  // for temp and NO2
+  Vzero1 = sensor1.zero();
 
   //Lux setup:
   tsl.enableAutoRange(true);  
@@ -128,11 +120,11 @@ void setup()
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */ 
   /* Initialise the sensor */
   //use tsl.begin() to default to Wire, 
-  //tsl.begin(&Wire2) directs api to use Wire2, etc.
+  //tsl.begin(&Wire2); // directs api to use Wire2, etc.
 
   starttime = millis();
-  while(!tsl.begin() && millis() - starttime <= TIMEOUT){}
-  if(!tsl.begin())
+  while(!tsl.begin(&Wire1) && millis() - starttime <= TIMEOUT){}
+  if(!tsl.begin(&Wire1))
   {
     Serial.println("Could not find a valid light sensor, check wiring!");
     error = 1;
@@ -195,24 +187,38 @@ void setup()
 
 void loop() 
 {
+
+  // for debug
+//  temp = Serial1.readString();
+//    
+//  Serial.print("got:");
+//  Serial.print(temp.length());
+//  Serial.println(temp);
+  
   // only do sensor stuff every minElapsed minutes
   if((long)(millis() - rolltime) >= 0)
   {    
-    // get measurements
+    // read sensors
     bme.readSensor(); 
-    airP = bme.getPressure_MB();
-    humidity = bme.getHumidity();
-    temperature = sensor1.getTemp(1,"F");
-    NO2_data = getNO2(10);
-    humidity=am2315.readHumidity();
-    temperature=am2315.readTemperature();
     sensors_event_t event;
     tsl.getEvent(&event);
-    if (event.light)
+
+    // set parmeters
+    airP = (bme.getPressure_MB())*.10; //kPa
+    humidity = bme.getHumidity();
+    //temperature = sensor1.getTemp(1,"F"); //TODO, using the NO2 sensor
+    temperature = bme.getTemperature_C();
+    light = event.light;
+
+    // get NO2
+    NO2_data = sensor1.getConc(1,temp1);
+    if(NO2_data < 0)
     {
-       light = event.light;
-       //Serial.print(event.light); Serial.println(" lux");
+      NO2_data = 0;
     }
+
+    // get CH4
+    CH4 = analogRead(CH4_pin)/5.0;
     
     // save data
     saveData();
@@ -234,17 +240,19 @@ void loop()
   }
 
   // always do power management
+  // when signal is low, AC pwr will be used
   voltage=ina219.getBusVoltage_V();
-  if (voltage<=5)
-  {
-    val1 = 1;
-    digitalWrite(Relay1, LOW);
-  }
-  if (voltage>=15)
-  {
-    val1=0;
-    digitalWrite(Relay1, HIGH);
-  }
+//  Serial.println(voltage);
+//  if (voltage<=10)
+//  {
+//    val1 = 1;
+//    digitalWrite(Relay1, HIGH); //SWAP THESE
+//  }
+//  if (voltage>=11)
+//  {
+//    val1=0;
+//    digitalWrite(Relay1, LOW); //SWAP THESE
+//  }
 }
 
 
@@ -283,6 +291,9 @@ void progMdot()
     Serial1.write("AT+ACK=8\n"); // turn on ACK, and set to max retries
     Serial1.write("AT+TXDR=DR3\n"); // sets the transmit data rate (AS 923) //TODO, adjust to get better range!
     Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
+//    Serial1.write("AT&W\n"); // saves configuration 
+//    Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
+//    delay(4000); // delay for reset to take place
     Serial1.write("AT+SD\n"); // configures to send data (all data received is transmitted)
     
     Serial.println("mDot programming complete");
@@ -312,9 +323,9 @@ void getTime()
 
     temp = Serial1.readString();
     
-    //Serial.print("got time:");
-    //Serial.print(temp.length());
-    //Serial.println(temp);
+    Serial.print("got time:");
+    Serial.print(temp.length());
+    Serial.println(temp);
 
     if(temp.length() == 19)
     {
@@ -339,11 +350,6 @@ void getTime()
   {
     Serial.println("Could not receive time wirelessly, defaulting to RTC");
     setSyncProvider(getTeensy3Time);
-
-    //operating under the assumption that time will have been gotten from PC
-    /*time_t t = ??;
-    Teensy3Clock.set(t); // set the RTC
-    setTime(t);*/
   }
   
   Serial.print("Time set: ");
@@ -461,50 +467,4 @@ void dateTime(uint16_t* date, uint16_t* time)
 time_t getTeensy3Time()
 {
   return Teensy3Clock.get();
-}
-
-// TODO, samir?? Does something to get gas
-float zeroOut(int x)
-{
-  i=0;
-  
-  tme= millis()+x*1000;
-  
-  do
-  {
-    Vgas0= analogRead(VrefAN)- Voff;
-    delay(1);
-    i++;
-    
-  }
-  while(millis()<tme);
-
-  G0 = Vgas0/i;
-    
-  return G0;
-}
-
-// TODO, samir?? Does something to get gas
-float getNO2(int x)
-{
-  i=0;
-  j=0;
-
-  tme= millis()+x*1000;
-
-  do
-  {
-    Avge=Avge+analogRead(VgasAN);
-    delay(1);
-    i++;
-  }
-  while(millis()<tme);
-
-  vAvg = Avge/i;
-
-  Vgas = vAvg * 5 * 1000.0 / 1024.0;
-  
-  Conc = 1/M*(Vgas-Vgas0);
-
-  return Conc;
 }

@@ -7,7 +7,7 @@ Adafruit_INA219 ina219;
 void setup() {
   
    Serial.begin(115200);
- ina219.begin();
+ ina219.begin(&Wire1);
  ina219.setCalibration_16V_400mA();
 
   pinMode(Relay1, OUTPUT);
