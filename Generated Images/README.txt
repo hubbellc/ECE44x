@@ -1,0 +1,1 @@
+This folder contains all images which we have utilized in our project.
