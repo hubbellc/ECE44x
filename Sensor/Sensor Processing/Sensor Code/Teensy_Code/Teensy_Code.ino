@@ -22,11 +22,14 @@
   Definitions
   --------------------------------------------------------------------------------------*/
 // pins used
-#define Relay1 33 
+#define relay 33 
 #define builtin_LED 13
-#define C1 A15 //TODO, check!
-#define T1 A16 //TODO, check!
+#define C1 A16 //TODO, check!
+#define NH3 A15 //TODO, check!
 #define CH4_pin A6
+
+#define TIME_HEADER  "T"   // Header tag for serial time sync message
+#define tran_number 1
 
 // general
 String temp = "";
@@ -49,16 +52,16 @@ unsigned long rolltime = millis() + TIMERMIN;
 unsigned long starttime = millis();
 
 // for datakeeping
-const String header = "Date,Temperature,Humidity,Air Pressure,Lux,NO2,CH4";
-int temperature = 12;
+const String header = "Tran#,Date,Temperature,Humidity,Air Pressure,Lux,NO2,CH4,NH3";
+int temperature = 0;
 int humidity = 0;
-int airP = 56;
-int light = 78;
-int NO2_data = 91;
-int CH4 = 23;
+int airP = 0;
+int light = 0;
+int NO2_data = 0;
+int CH4 = 0;
+int NH3_data = 0;
 
 // for power
-int val1=1;
 float voltage;
 Adafruit_INA219 ina219;
 
@@ -73,7 +76,7 @@ const float Sf1 =-26.69; //nA/ppm
 float temp1;
 float TZero;
 float Vzero1;
-NO2 sensor1(C1, T1, Sf1);
+NO2 sensor1(C1, 0, Sf1);
 
 void setup() 
 {
@@ -88,13 +91,11 @@ void setup()
   digitalWrite(builtin_LED, HIGH);
 
   // for power
-  pinMode(Relay1, OUTPUT);
-  digitalWrite(Relay1, HIGH); //TODO, change later
-//  digitalWrite(Relay1, val1); //TODO, remove!
+  pinMode(relay, OUTPUT);
   ina219.begin(&Wire1);
   ina219.setCalibration_16V_400mA();
  
-  if((int)ina219.getBusVoltage_V() == 32) // TODO, how know if fail??
+  if((int)ina219.getBusVoltage_V() == 32)
   {
     Serial.println("Could not find a valid current sensor, check wiring!"); 
     error = 1;
@@ -134,7 +135,7 @@ void setup()
   // program the Mdot
   progMdot();
 
-  delay(3000); // 3 second delay ...TODO, refine
+  delay(1000); // 1 second delay ...TODO, refine
   
   // clear input buffers
   while (Serial.available() > 0 ) {
@@ -184,6 +185,7 @@ void setup()
   }
   
   Serial.println("---------------------beginning main loop--------------------");
+  Serial.println(header);
 }
 
 void loop() 
@@ -207,7 +209,6 @@ void loop()
     // set parmeters
     airP = (bme.getPressure_MB())*.10; //kPa
     humidity = bme.getHumidity();
-    //temperature = sensor1.getTemp(1,"F"); //TODO, using the NO2 sensor
     temperature = bme.getTemperature_C();
     light = event.light;
 
@@ -220,6 +221,9 @@ void loop()
 
     // get CH4
     CH4 = analogRead(CH4_pin)/5.0;
+
+    //get NH3
+    NH3_data = analogRead(NH3);
     
     // save data
     saveData();
@@ -243,19 +247,16 @@ void loop()
   // always do power management
   // when signal is low, AC pwr will be used
   voltage=ina219.getBusVoltage_V();
-  Serial.println(voltage);
+  //Serial.println(voltage);
   if (voltage<=10)
   {
-    val1 = 1;
-    digitalWrite(Relay1, LOW); //SWAP THESE
+    digitalWrite(relay, LOW); //SWAP THESE
   }
   if (voltage>=12)
   {
-    val1=0;
-    digitalWrite(Relay1, HIGH); //SWAP THESE
+    digitalWrite(relay, HIGH); //SWAP THESE
   }
 }
-
 
 /*--------------------------------------------------------------------------------------
   Helper Functions
@@ -292,6 +293,7 @@ void progMdot()
     Serial1.write("AT+ACK=8\n"); // turn on ACK, and set to max retries
     Serial1.write("AT+TXDR=DR3\n"); // sets the transmit data rate (AS 923) //TODO, adjust to get better range!
     Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
+    Serial1.write("AT+ACK=8\n"); // Turn on ACK
 //    Serial1.write("AT&W\n"); // saves configuration 
 //    Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
 //    delay(4000); // delay for reset to take place
@@ -315,7 +317,7 @@ void getTime()
   //TODO, Caleb fix later!!
   while((year() < 2019) && (millis() - starttime <= (TIMEOUT))) // guaranteed to work, year wont go back
   {
-    Serial1.write("Transmitter1\n");
+    Serial1.write("Time?");
     
 //    while(Serial1.peek() == -1)
 //    {   
@@ -351,6 +353,14 @@ void getTime()
   {
     Serial.println("Could not receive time wirelessly, defaulting to RTC");
     setSyncProvider(getTeensy3Time);
+    if (timeStatus()!= timeSet) 
+    {
+      Serial.println("  Unable to sync with the RTC");
+    }
+    else 
+    {
+      Serial.println("  RTC has set the system time");
+    }
   }
   
   Serial.print("Time set: ");
@@ -376,8 +386,8 @@ void saveData()
   
   // generate string from data
   String toSend = "";
-  toSend += digitalClock();
-  toSend += ",";
+  toSend += tran_number + ",";
+  toSend += digitalClock() + ",";
   toSend += temperature;
   toSend += ",";
   toSend += humidity;
@@ -389,6 +399,8 @@ void saveData()
   toSend += NO2_data;
   toSend += ",";
   toSend += CH4;
+  toSend += ",";
+  toSend += NH3_data;
 
   // write to serial
   Serial.println(toSend);
@@ -468,4 +480,18 @@ void dateTime(uint16_t* date, uint16_t* time)
 time_t getTeensy3Time()
 {
   return Teensy3Clock.get();
+}
+
+unsigned long processSyncMessage() {
+  unsigned long pctime = 0L;
+  const unsigned long DEFAULT_TIME = 1357041600; // Jan 1 2013 
+
+  if(Serial.find(TIME_HEADER)) {
+     pctime = Serial.parseInt();
+     return pctime;
+     if( pctime < DEFAULT_TIME) { // check the value is a valid time (greater than Jan 1 2013)
+       pctime = 0L; // return 0 to indicate that the time is not valid
+     }
+  }
+  return pctime;
 }
