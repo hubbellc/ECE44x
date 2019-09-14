@@ -97,6 +97,7 @@ void loop()
     Serial1.println(temp);
     digitalWrite(13, HIGH);
     delay(500);
+    Serial1.println("Time?\n");
   }
   else
   {
