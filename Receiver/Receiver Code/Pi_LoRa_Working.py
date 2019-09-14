@@ -14,16 +14,16 @@ import csv
 import threading
 
 new_file = True
-filenum = 0
-fieldnames=['Date/time', 'Temp', 'Humidity', 'Air pressure', 'Lux', 'NO2', 'CH4']
+tran_nuber = 0 # shows not real transmitter
+fieldnames=['Date/time', 'Temp', 'Humidity', 'Air pressure', 'Lux', 'NO2', 'CH4', 'NH3']
 
 # make the port
 port = serial.Serial("/dev/serial0", baudrate=115200, timeout=3.0)
 
 def sendit():
-    global filenum, new_file
+    global tran_number, new_file
     threading.Timer(14.0, sendit).start()
-    #toOpen = "/home/pi/Documents/ECE44x/Wireless/data"+str(filenum)+".csv"
+    #toOpen = "/home/pi/Documents/ECE44x/Wireless/data"+str(tran_number)+".csv"
    # file = open(toOpen, 'w')
     #with file as csvfile:
      #   writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -33,11 +33,11 @@ def sendit():
     #time.sleep(30)
     
     #upload if we have made a file!
-    #if filenum > 0:
+    #if tran_number > 0:
  
-    print("file being uploaded: " + str(filenum))
-      #  toOpen = "/home/pi/Documents/ECE44x/Wireless/gdrive-linux-rpi upload --parent 1DXNoqiL6IrSj4Qq8Vzcjfm8o7wAowkwT /home/pi/Documents/Data/data"+str(filenum)+".csv"
-    toOpen = "/home/pi/Documents/code/gdrive-linux-rpi update 1MaAuFibs0VxOXIV2-WT_5v7mjQtjygrC /home/pi/Documents/Data/data"+str(filenum)+".csv"
+    print("file being uploaded: ")
+      #  toOpen = "/home/pi/Documents/ECE44x/Wireless/gdrive-linux-rpi upload --parent 1DXNoqiL6IrSj4Qq8Vzcjfm8o7wAowkwT /home/pi/Documents/Data/data"+str(tran_number)+".csv"
+    toOpen = "/home/pi/Documents/code/gdrive-linux-rpi update 1MaAuFibs0VxOXIV2-WT_5v7mjQtjygrC /home/pi/Documents/Data/data"+str(tran_number)+".csv"
     os.system(toOpen)
     print ("full send")
    # filenum = filenum + 1
@@ -94,23 +94,28 @@ while True:
     #test script below
     #response = "01/01/1997 06:30:23,10,14,19,70,0,60"
     if response:
-        #print("Received at " + time.strftime("%H:%M:%S")
-        #       + " --> " + response) # for debugging
-        port.write(time.strftime("%m/%e/%G %H:%M:%S")+ "\n")
+        print("Received at " + time.strftime("%H:%M:%S")
+               + " --> " + response) # for debugging
+        #port.write(time.strftime("%m/%e/%G %H:%M:%S")+ "\n")
         
         # perform handshake and give teensy the time
-        if response == "Transmitter1\n":
+        if response == "Time?":
             print("hand shook with: " + response)
+            print("time:" + time.strftime("%m/%e/%G %H:%M:%S"))
             port.write(time.strftime("%m/%e/%G %H:%M:%S") + "\n")
 
         #parse data into array
         data = response.rstrip().split(",")
         print(data) # for debug
         
+        # extract the tran number, and then dont care
+        tran_number = data[0]
+        data.remove(0)
+        
         #write data if it is valid
         if (len(data) > 5):
             if(new_file == True):
-                toOpen = "/home/pi/Documents/Data/data"+str(filenum)+".csv"
+                toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"
                 file1 = open(toOpen, 'w')
                 with file1 as csvfile:
                     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -118,9 +123,9 @@ while True:
                     writer.writeheader()
                 new_file = False
             else:
-                toOpen = "/home/pi/Documents/Data/data"+str(filenum)+".csv"    
-                print("file being written to: " +str(filenum))
-            #toOpen = "/home/pi/Documents/ECE44x/Wireless/data"+str(filenum[0]+1)+".csv"
+                toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"    
+                print("file being written to: " +str(tran_number))
+            #toOpen = "/home/pi/Documents/ECE44x/Wireless/data"+str(tran_number[0]+1)+".csv"
             file1 = open(toOpen, 'a')
             with file1 as csvfile:
                 print("Received valid data: " + str(data))
@@ -130,4 +135,3 @@ while True:
                                 fieldnames[3]: data[3], fieldnames[4]: data[4], fieldnames[5]:data[5],
                                 fieldnames[6]: data[6]})
                 #file1.close()
-    
