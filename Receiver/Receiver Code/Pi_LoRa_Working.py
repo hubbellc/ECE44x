@@ -37,7 +37,7 @@ def sendit():
  
     print("file being uploaded: " + str(filenum))
       #  toOpen = "/home/pi/Documents/ECE44x/Wireless/gdrive-linux-rpi upload --parent 1DXNoqiL6IrSj4Qq8Vzcjfm8o7wAowkwT /home/pi/Documents/Data/data"+str(filenum)+".csv"
-    toOpen = "/home/pi/Documents/ECE44x/Wireless/gdrive-linux-rpi update 1MaAuFibs0VxOXIV2-WT_5v7mjQtjygrC /home/pi/Documents/Data/data"+str(filenum)+".csv"
+    toOpen = "/home/pi/Documents/code/gdrive-linux-rpi update 1MaAuFibs0VxOXIV2-WT_5v7mjQtjygrC /home/pi/Documents/Data/data"+str(filenum)+".csv"
     os.system(toOpen)
     print ("full send")
    # filenum = filenum + 1
@@ -105,7 +105,7 @@ while True:
 
         #parse data into array
         data = response.rstrip().split(",")
-        #print(data) # for debug
+        print(data) # for debug
         
         #write data if it is valid
         if (len(data) > 5):
