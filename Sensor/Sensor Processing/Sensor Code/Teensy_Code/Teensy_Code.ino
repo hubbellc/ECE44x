@@ -324,7 +324,7 @@ void getTime()
 //      temp = Serial1.readString();
 //      Serial.println(temp);
 //    }
-    delay(10);
+    delay(100);
     temp = Serial1.readString();
 
     if (temp.length() > 0)
