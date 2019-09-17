@@ -45,7 +45,7 @@ void setup()
     Serial1.write("AT+NA=00112233\n"); // sets network address
     Serial1.write("AT+NSK=00112233001122330011223300112233\n"); // sets network session key
     Serial1.write("AT+DSK=33221100332211003322110033221100\n"); // sets data session key
-    Serial1.write("AT+TXDR=DR0\n"); // sets the transmit data rate (AS 923) //TODO, adjust to get better range!
+    Serial1.write("AT+TXDR=DR3\n"); // sets the transmit data rate (AS 923) //TODO, adjust to get better range!
     Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
     Serial1.write("AT+ACK=8\n");
 //    Serial1.write("AT&W\n"); // saves configuration 
@@ -94,13 +94,13 @@ void loop()
     temp = Serial1.readString();
     Serial.print("Received: ");
     Serial.println(temp);
-    Serial1.println(temp);
+    //Serial1.println(temp);
     digitalWrite(13, HIGH);
     delay(500);
+    Serial1.println("Time?\n");
   }
   else
   {
     digitalWrite(13, LOW);
   }
-  Serial1.println("Time?\n");
 }

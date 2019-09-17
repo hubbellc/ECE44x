@@ -45,7 +45,7 @@ const char * file_string = "raitong.csv"; // << set file here!! (NOTE: name cann
 
 // for timekeeping
 #define MINELAPSED .5 // <<------------------- set frequency for reading sensors here!!
-#define LOOPTIME .05 // 30 seconds to try
+#define LOOPTIME .5 // 30 seconds to try
 #define TIMERMIN (1000UL * 60 * MINELAPSED)
 #define TIMEOUT (1000UL * 60 * LOOPTIME)
 unsigned long rolltime = millis() + TIMERMIN;
@@ -315,7 +315,7 @@ void getTime()
   starttime = millis();
 
   //TODO, Caleb fix later!!
-  while((year() < 2019) && (millis() - starttime <= (TIMEOUT * 4))) // guaranteed to work, year wont go back
+  while((year() < 2019) && (millis() - starttime <= TIMEOUT)) // guaranteed to work, year wont go back
   {
     Serial1.write("Time?\n");
     
