@@ -13,15 +13,17 @@ import os
 import csv
 import threading
 
-new_file = True
-tran_number = 0 # shows not real transmitter
+#new_file = False
+
+global tran_number # shows not real transmitter
+tran_number = 0
 fieldnames=['Date/time', 'Temp', 'Humidity', 'Air pressure', 'Lux', 'NO2', 'CH4', 'NH3']
 
 # make the port
 port = serial.Serial("/dev/serial0", baudrate=115200, timeout=3.0)
 
 def sendit():
-    global tran_number, new_file
+    #global tran_number, new_file
     threading.Timer(14.0, sendit).start()
     #toOpen = "/home/pi/Documents/ECE44x/Wireless/data"+str(tran_number)+".csv"
    # file = open(toOpen, 'w')
@@ -34,14 +36,14 @@ def sendit():
     
     #upload if we have made a file!
     #if tran_number > 0:
- 
-    print("file being uploaded: ")
-      #  toOpen = "/home/pi/Documents/ECE44x/Wireless/gdrive-linux-rpi upload --parent 1DXNoqiL6IrSj4Qq8Vzcjfm8o7wAowkwT /home/pi/Documents/Data/data"+str(tran_number)+".csv"
-    toOpen = "/home/pi/Documents/code/gdrive-linux-rpi update 1MaAuFibs0VxOXIV2-WT_5v7mjQtjygrC /home/pi/Documents/Data/data"+str(tran_number)+".csv"
-    os.system(toOpen)
-    print ("full send")
+    if (tran_number > 0 and tran_number < 11):
+        print("file being uploaded: ")
+          #  toOpen = "/home/pi/Documents/ECE44x/Wireless/gdrive-linux-rpi upload --parent 1DXNoqiL6IrSj4Qq8Vzcjfm8o7wAowkwT /home/pi/Documents/Data/data"+str(tran_number)+".csv"
+        toOpen = "/home/pi/Documents/code/gdrive-linux-rpi update 1MaAuFibs0VxOXIV2-WT_5v7mjQtjygrC /home/pi/Documents/Data/data"+str(tran_number)+".csv"
+        os.system(toOpen)
+        print ("full send")
    # filenum = filenum + 1
-    new_file = False
+    #new_file = False
     
 # test Mdot connection
 response = ""
@@ -62,8 +64,8 @@ if response[1:3] == "OK":
    port.write("AT+NA=00112233\n".encode()) # sets network address
    port.write("AT+NSK=00112233001122330011223300112233\n".encode()) # sets network session key
    port.write("AT+DSK=33221100332211003322110033221100\n".encode()) # sets data session key
-   port.write("AT+TXDR=DR0\n".encode()) # sets the transmit data rate (AS 923) //TODO, adjust to get better range!
-   port.write("AT+TXF=921000000\n".encode()) # sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range!
+   port.write("AT+TXDR=DR2\n".encode()) # sets the transmit data rate (AS 923) //TODO, adjust to get better range!
+   port.write("AT+TXF=920000000\n".encode()) # sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range!
    port.write("AT+ACK=8\n".encode())
    
    # use to write settings to flash
@@ -91,24 +93,27 @@ while True:
     #port.write(time.strftime("%m/%e/%G %H:%M:%S"))
     #port.write("\n")
     print(response)
+    #port.write((time.strftime("%m/%e/%G %H:%M:%S")+ "\n").encode())
     
     #test script below
     #response = "01/01/1997 06:30:23,10,14,19,70,0,60"
     if response:
-        #print("Received at " + time.strftime("%H:%M:%S")
-        #       + " --> " + response) # for debugging
-        #port.write(time.strftime("%m/%e/%G %H:%M:%S")+ "\n")
+        print("Received at " + time.strftime("%H:%M:%S")
+               + " --> " + response) # for debugging
+        port.write(time.strftime("%m/%e/%G %H:%M:%S")+ "\n")
         
         # perform handshake and give teensy the time
         if "Time?" in response:
             print("hand shook")
-            #print("time:" + time.strftime("%m/%e/%G %H:%M:%S"))
+            print("time:" + time.strftime("%m/%e/%G %H:%M:%S"))
             #port.write("hello\r\n".encode())
             #port.write(time.strftime("%m/%e/%G %H:%M:%S").encode())
             #port.write("09/14/2019 14:22:52\n".encode())
             port.write((time.strftime("%m/%e/%G %H:%M:%S") + "\n").encode())
             time.sleep(3)
-            port.read()
+            #port.read()
+        
+        print("done sending time")
 
         #parse data into array
         data = response.rstrip().split(",")
@@ -121,24 +126,24 @@ while True:
         except:
             tran_number = 0 #this is bad data
         
-        if (tran_number > 0 and tran_number < 1):
+        if (tran_number > 0 and tran_number < 11):
             #write data if it is valid
             if (len(data) > 5):
-                if(new_file == True):
-                    toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"
-                    file1 = open(toOpen, 'w+')
-                    with file1 as csvfile:
-                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                        print("New file...writing header")
-                        writer.writeheader()
-                    new_file = False
-                else:
-                    toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"    
-                    print("file being written to: " +str(tran_number))
-                #toOpen = "/home/pi/Documents/ECE44x/Wireless/data"+str(tran_number[0]+1)+".csv"
+#                if(new_file == True):
+#                    toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"
+#                    file1 = open(toOpen, 'w+')
+#                    with file1 as csvfile:
+#                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#                        print("New file...writing header")
+#                        writer.writeheader()
+#                    new_file = False
+#                else:
+#                    toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"    
+#                    print("file being written to: " +str(tran_number))
+                toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"
                 file1 = open(toOpen, 'a+')
                 with file1 as csvfile:
-                    print("Received valid data: " + str(data))
+                    print("Saving Data")
                     #print("lux: " + data[4])
                     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                     writer.writerow({fieldnames[0]: data[0], fieldnames[1]: data[1], fieldnames[2]: data[2],
