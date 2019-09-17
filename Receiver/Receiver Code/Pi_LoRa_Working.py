@@ -17,33 +17,19 @@ import threading
 
 global tran_number # shows not real transmitter
 tran_number = 0
+
 fieldnames=['Date/time', 'Temp', 'Humidity', 'Air pressure', 'Lux', 'NO2', 'CH4', 'NH3']
 
 # make the port
 port = serial.Serial("/dev/serial0", baudrate=115200, timeout=3.0)
 
 def sendit():
-    #global tran_number, new_file
-    threading.Timer(14.0, sendit).start()
-    #toOpen = "/home/pi/Documents/ECE44x/Wireless/data"+str(tran_number)+".csv"
-   # file = open(toOpen, 'w')
-    #with file as csvfile:
-     #   writer = csv.DictWriter(file, fieldnames=fieldnames)
-      #  print("attempting to write header")
-      #  writer.writeheader()
-        #file.close()
-    #time.sleep(30)
-    
-    #upload if we have made a file!
-    #if tran_number > 0:
-    if (tran_number > 0 and tran_number < 11):
-        print("file being uploaded: ")
-          #  toOpen = "/home/pi/Documents/ECE44x/Wireless/gdrive-linux-rpi upload --parent 1DXNoqiL6IrSj4Qq8Vzcjfm8o7wAowkwT /home/pi/Documents/Data/data"+str(tran_number)+".csv"
-        toOpen = "/home/pi/Documents/code/gdrive-linux-rpi update 1MaAuFibs0VxOXIV2-WT_5v7mjQtjygrC /home/pi/Documents/Data/data"+str(tran_number)+".csv"
-        os.system(toOpen)
-        print ("full send")
-   # filenum = filenum + 1
-    #new_file = False
+    threading.Timer(60, sendit).start()
+    print("file being uploaded: ")
+    toOpen = "/home/pi/Documents/code/gdrive-linux-rpi sync upload --keep-largest /home/pi/Documents/Data 1iR74rrbEBQ9Su3WMTcZe_SJnLB6R-aWm"
+    os.system(toOpen)
+    print ("full send to drive")
+   
     
 # test Mdot connection
 response = ""
@@ -100,20 +86,19 @@ while True:
     if response:
         print("Received at " + time.strftime("%H:%M:%S")
                + " --> " + response) # for debugging
-        port.write(time.strftime("%m/%e/%G %H:%M:%S")+ "\n")
+        port.write((time.strftime("%m/%e/%G %H:%M:%S")+ "\n").encode())
         
         # perform handshake and give teensy the time
         if "Time?" in response:
             print("hand shook")
-            print("time:" + time.strftime("%m/%e/%G %H:%M:%S"))
+            #print("time:" + time.strftime("%m/%e/%G %H:%M:%S"))
             #port.write("hello\r\n".encode())
             #port.write(time.strftime("%m/%e/%G %H:%M:%S").encode())
             #port.write("09/14/2019 14:22:52\n".encode())
-            port.write((time.strftime("%m/%e/%G %H:%M:%S") + "\n").encode())
+            #port.write((time.strftime("%m/%e/%G %H:%M:%S") + "\n").encode())
             time.sleep(3)
             #port.read()
-        
-        print("done sending time")
+            #print("done sending time")
 
         #parse data into array
         data = response.rstrip().split(",")
@@ -129,24 +114,37 @@ while True:
         if (tran_number > 0 and tran_number < 11):
             #write data if it is valid
             if (len(data) > 5):
+                toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"
 #                if(new_file == True):
-#                    toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"
-#                    file1 = open(toOpen, 'w+')
-#                    with file1 as csvfile:
+#                    file = open(toOpen, 'w+')
+#                    with file as csvfile:
 #                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 #                        print("New file...writing header")
 #                        writer.writeheader()
-#                    new_file = False
-#                else:
-#                    toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"    
-#                    print("file being written to: " +str(tran_number))
-                toOpen = "/home/pi/Documents/Data/data"+str(tran_number)+".csv"
-                file1 = open(toOpen, 'a+')
-                with file1 as csvfile:
-                    print("Saving Data")
-                    #print("lux: " + data[4])
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                    writer.writerow({fieldnames[0]: data[0], fieldnames[1]: data[1], fieldnames[2]: data[2],
-                                    fieldnames[3]: data[3], fieldnames[4]: data[4], fieldnames[5]:data[5],
-                                    fieldnames[6]: data[6]})
-                    #file1.close()
+
+                file_exists = True
+                try:
+                    file = open(toOpen, 'r')
+                except:
+                    file_exists = False
+                    
+                if (file_exists):
+                    file = open(toOpen, 'a+')
+                    with file as csvfile:
+                        print("Saving Data")
+                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                        writer.writerow({fieldnames[0]: data[0], fieldnames[1]: data[1], fieldnames[2]: data[2],
+                                        fieldnames[3]: data[3], fieldnames[4]: data[4], fieldnames[5]:data[5],
+                                        fieldnames[6]: data[6], fieldnames[7]: data[7]})
+                else:
+                    file = open(toOpen, 'w+')
+                    with file as csvfile:
+                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                        print("New file...writing header")
+                        writer.writeheader()
+                        print("Saving Data")
+                        writer.writerow({fieldnames[0]: data[0], fieldnames[1]: data[1], fieldnames[2]: data[2],
+                                        fieldnames[3]: data[3], fieldnames[4]: data[4], fieldnames[5]:data[5],
+                                        fieldnames[6]: data[6], fieldnames[7]: data[7]})
+                        
+                file.close()
