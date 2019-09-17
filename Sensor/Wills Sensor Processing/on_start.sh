@@ -1,12 +1,12 @@
 #!/bin/bash
 
-python lora_init.py
+xterm -e 'sudo python /home/pi/Documents/ECE44x/Sensor/Wills\ Sensor\ Processing/lora_init.py'
 
 while :
 do
 	#hostname -I >> /home/pi/IPADDRESS
 	sleep 10
-	sudo python /home/pi/read_sensors.py >> /home/pi/log.txt
+	xterm -hold -e 'sudo python /home/pi/Documents/ECE44x/Sensor/Wills\ Sensor\ Processing/read_sensors.py'
 	echo "Read complete"
 	if [ -e /dev/sda1 ]
 	then

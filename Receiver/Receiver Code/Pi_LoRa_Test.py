@@ -29,14 +29,14 @@ if response:
    port.write("AT+NA=00112233\n".encode()) # sets network address
    port.write("AT+NSK=00112233001122330011223300112233\n".encode()) # sets network session key
    port.write("AT+DSK=33221100332211003322110033221100\n".encode()) # sets data session key
-   Serial1.write("AT+ACK=8\n"); # turn on ACK, and set to max retries
+   #port.write("AT+ACK=8\n".encode()) # turn on ACK, and set to max retries
    port.write("AT+TXDR=DR3\n".encode()) # sets the transmit data rate (AS 923) //TODO, adjust to get better range!
    port.write("AT+TXF=920000000\n".encode()) # sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
-   port.write("AT&W\n".encode()) # saves configuration 
-   port.write("ATZ\n".encode()) # resets CPU (takes 3 seconds) 
-   time.sleep(4) # 3.1 second delay for reset to take place
+#   port.write("AT&W\n".encode()) # saves configuration 
+#   port.write("ATZ\n".encode()) # resets CPU (takes 3 seconds) 
+#   time.sleep(4) # 3.1 second delay for reset to take place
    port.write("AT+SD\n".encode()) # configures to send data (all data received is transmitted)
-   time.sleep(3) 
+   time.sleep(4) 
    
    print("Programming complete")    
 else:
@@ -56,11 +56,13 @@ while True:
     
     #Now configure to send time
     print(time.strftime("%H:%M:%S"))
-    port.write(time.strftime("%H:%M:%S"))
-    port.write("\n")
+    port.write(time.strftime("%H:%M:%S").encode())
+    port.write("\n".encode())
+    #port.write((time.strftime("%m/%e/%G %H:%M:%S") + "\n").encode())
     time.sleep(3)    
        
-   #response = port.readline() #TODO, only will work if newline seperated
+    response = port.readline() #TODO, only will work if newline seperated
+    print(response)
     
     
     

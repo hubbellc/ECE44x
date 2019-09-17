@@ -20,7 +20,7 @@ port.open()
 
 # infinite loop!
 while True:
-    word = raw_input()
+    word = input()
     port.write(word.encode()) #TODO, work?
     time.sleep(3)
     response = port.read(size=300)
