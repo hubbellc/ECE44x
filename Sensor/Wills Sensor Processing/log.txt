@@ -107,3 +107,5 @@ Failure during methane test
 Failure during temperature/humidity test
 Failure during ammonia test
 Failure during methane test
+Connection successful
+Programming complete
