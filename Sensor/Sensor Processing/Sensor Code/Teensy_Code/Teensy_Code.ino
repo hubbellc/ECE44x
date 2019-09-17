@@ -44,7 +44,7 @@ const int chipSelect = BUILTIN_SDCARD;
 const char * file_string = "raitong.csv"; // << set file here!! (NOTE: name cannot include a "_"...26 character letters only)
 
 // for timekeeping
-#define MINELAPSED .25 // <<------------------- set frequency for reading sensors here!!
+#define MINELAPSED .5 // <<------------------- set frequency for reading sensors here!!
 #define LOOPTIME .05 // 30 seconds to try
 #define TIMERMIN (1000UL * 60 * MINELAPSED)
 #define TIMEOUT (1000UL * 60 * LOOPTIME)
@@ -290,10 +290,10 @@ void progMdot()
     Serial1.write("AT+NA=00112233\n"); // sets network address
     Serial1.write("AT+NSK=00112233001122330011223300112233\n"); // sets network session key
     Serial1.write("AT+DSK=33221100332211003322110033221100\n"); // sets data session key
-    Serial1.write("AT+TXDR=DR0\n"); // (0-6) sets the transmit data rate (AS 923) //TODO, adjust to get better range!
-    Serial1.write("AT+TXF=921000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
+    Serial1.write("AT+TXDR=DR2\n"); // (0-6) sets the transmit data rate (AS 923) //TODO, adjust to get better range!
+    Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
     Serial1.write("AT+ACK=8\n"); // Turn on ACK
-    Serial.println("dude");
+    Serial.println("dude2");
 //    Serial1.write("AT&W\n"); // saves configuration 
 //    Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
 //    delay(4000); // delay for reset to take place
@@ -324,7 +324,7 @@ void getTime()
 //      temp = Serial1.readString();
 //      Serial.println(temp);
 //    }
-    delay(10);
+    delay(100);
     temp = Serial1.readString();
 
     if (temp.length() > 0)
