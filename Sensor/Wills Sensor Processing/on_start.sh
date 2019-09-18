@@ -5,7 +5,7 @@ xterm -e 'sudo python /home/pi/Documents/ECE44x/Sensor/Wills\ Sensor\ Processing
 while :
 do
 	#hostname -I >> /home/pi/IPADDRESS
-	sleep 30
+	sleep 900
 	xterm  -e 'sudo python /home/pi/Documents/ECE44x/Sensor/Wills\ Sensor\ Processing/read_sensors.py'
 	echo "Read complete"
 	if [ -e /dev/sda1 ]
