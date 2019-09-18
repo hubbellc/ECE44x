@@ -3,9 +3,10 @@
 import time
 import serial
 import os
+import datetime
 from timeit import default_timer as timer
 
-TIMEOUT = 30
+TIMEOUT = 2 * 60 # 2 min
 
 def getTime():
     year = 0
@@ -48,9 +49,9 @@ def getTime():
             print("set time")
 
             # Sets all time info
-            ct = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
+            ct = datetime.datetime(year, month, day, hour, minute, second)
             print(ct)
-            os.system('sudo timedatectl set-time %s' % ct.strftime('%Y-%m-%d %H:%M:%S'))      
+            os.system("sudo timedatectl set-time '" + ct.strftime('%Y-%m-%d %H:%M:%S') + "'")      
             print("got it!")
 
     if(year < 2019):

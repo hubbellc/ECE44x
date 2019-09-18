@@ -24,8 +24,8 @@
 // pins used
 #define relay 33 
 #define builtin_LED 13
-#define C1 A16 //TODO, check!
-#define NH3 A15 //TODO, check!
+#define C1 A16 
+#define NH3 A15 
 #define CH4_pin A6
 
 #define TIME_HEADER  "T"   // Header tag for serial time sync message
@@ -45,7 +45,7 @@ const char * file_string = "raitong.csv"; // << set file here!! (NOTE: name cann
 
 // for timekeeping
 #define MINELAPSED .5 // <<------------------- set frequency for reading sensors here!!
-#define LOOPTIME .05 // 30 seconds to try
+#define LOOPTIME 2 // 30 seconds to try
 #define TIMERMIN (1000UL * 60 * MINELAPSED)
 #define TIMEOUT (1000UL * 60 * LOOPTIME)
 unsigned long rolltime = millis() + TIMERMIN;
@@ -120,10 +120,7 @@ void setup()
   tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_13MS);      /* fast but low resolution */
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS);  /* medium resolution and speed   */
   // tsl.setIntegrationTime(TSL2561_INTEGRATIONTIME_402MS);  /* 16-bit data but slowest conversions */ 
-  /* Initialise the sensor */
-  //use tsl.begin() to default to Wire, 
-  //tsl.begin(&Wire2); // directs api to use Wire2, etc.
-
+  
   starttime = millis();
   while(!tsl.begin(&Wire1) && millis() - starttime <= TIMEOUT){}
   if(!tsl.begin(&Wire1))
@@ -135,7 +132,7 @@ void setup()
   // program the Mdot
   progMdot();
 
-  delay(1000); // 1 second delay ...TODO, refine
+  delay(1000); // 1 second delay for safety
   
   // clear input buffers
   while (Serial.available() > 0 ) {
@@ -247,7 +244,6 @@ void loop()
   // always do power management
   // when signal is low, AC pwr will be used
   voltage=ina219.getBusVoltage_V();
-  //Serial.println(voltage);
   if (voltage<=10)
   {
     digitalWrite(relay, LOW); //SWAP THESE
@@ -290,13 +286,9 @@ void progMdot()
     Serial1.write("AT+NA=00112233\n"); // sets network address
     Serial1.write("AT+NSK=00112233001122330011223300112233\n"); // sets network session key
     Serial1.write("AT+DSK=33221100332211003322110033221100\n"); // sets data session key
-    Serial1.write("AT+TXDR=DR2\n"); // (0-6) sets the transmit data rate (AS 923) //TODO, adjust to get better range!
+    Serial1.write("AT+TXDR=DR0\n"); // (0-6) sets the transmit data rate (AS 923) //TODO, adjust to get better range!
     Serial1.write("AT+TXF=920000000\n"); // sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range! 
     Serial1.write("AT+ACK=8\n"); // Turn on ACK
-    Serial.println("dude2");
-//    Serial1.write("AT&W\n"); // saves configuration 
-//    Serial1.write("ATZ\n"); // resets CPU (takes 3 seconds) 
-//    delay(4000); // delay for reset to take place
     Serial1.write("AT+SD\n"); // configures to send data (all data received is transmitted)
     
     Serial.println("mDot programming complete");
@@ -314,17 +306,10 @@ void getTime()
   // loop until handshake is complete, or timeout
   starttime = millis();
 
-  //TODO, Caleb fix later!!
-  while((year() < 2019) && (millis() - starttime <= (TIMEOUT * 4))) // guaranteed to work, year wont go back
+  while((year() < 2019) && (millis() - starttime <= TIMEOUT)) // guaranteed to work, year wont go back
   {
     Serial1.write("Time?\n");
-    
-//    while(Serial1.peek() == -1)
-//    {   
-//      temp = Serial1.readString();
-//      Serial.println(temp);
-//    }
-    delay(100);
+    delay(1000);
     temp = Serial1.readString();
 
     if (temp.length() > 0)
@@ -352,10 +337,8 @@ void getTime()
       setTime(timeHold[3], timeHold[4], timeHold[5], timeHold[1], timeHold[0], timeHold[2]);
     }
   }
-  //Serial.println("got it!");
 
   // if unsuccessful, use RTC
-  // TODO, check!! Use File > Examples > Time > TimeTeensy3 
   if(year() < 2019)
   {
     Serial.println("Could not receive time wirelessly, defaulting to RTC");
@@ -415,7 +398,7 @@ void saveData()
   Serial.println(toSend);
   
   // write to Wireless
-  Serial1.println(toSend); // TODO, test verbosity, ACK's have been enabled
+  Serial1.println(toSend);
   Serial.print("Writing data to LoRa...");
   
   // write to SD
@@ -454,13 +437,25 @@ void saveData()
 String digitalClock() 
 {
   String nowTime = "";
-  
+
+  if(day() < 10)
+  {
+    nowTime += "0";
+  }
   nowTime += day();
   nowTime += "/";
+  if(month() < 10)
+  {
+    nowTime += "0";
+  }
   nowTime += month();
   nowTime += "/";
   nowTime += year(); 
   nowTime += " ";
+  if(hour() < 10)
+  {
+    nowTime += "0";
+  }
   nowTime += hour();
   nowTime += ":";
   if(minute() < 10)
