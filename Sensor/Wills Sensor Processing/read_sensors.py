@@ -82,7 +82,7 @@ def pressure_test(addr):
     # Convert the data to 20-bits
     pres = ((data[1] * 65536) + (data[2] * 256) + (data[3] & 0xF0)) / 16
     pressure = (pres / 4.0) / 1000.0
-    pressure = pressure - 0.334 # calibration adjustment
+    #pressure = pressure - 0.334 # calibration adjustment
     #print('pressure: %d' % pressure)
     return (pressure)
 
@@ -101,12 +101,13 @@ def humtemp_test():
         return ('No value', 'No value')
 
 def ammonia_test(channel, temp, humidity):
-    ammonia = adc.read_adc(channel, gain = GAIN) # reads 12-bit ADC channel
-    ammonia = (4096.0/ammonia - 1)*4600 # calculate internal resistance
-    ammonia = correct_ammonia(ammonia, temp, humidity) # correct for temperature and humidity
-    ammonia = ammonia/correct_ammonia(123500, 30, 75) # divide by reference resistance
+    ammonia = adc.read_adc(channel, gain = GAIN)# reads 12-bit ADC channel
+    ammonia = 0.28*ammonia  #agreeability with transmitter1 factor
+    #ammonia = (4096.0/ammonia - 1)*4600 # calculate internal resistance
+    #ammonia = correct_ammonia(ammonia, temp, humidity) # correct for temperature and humidity
+    #ammonia = ammonia/correct_ammonia(123500, 30, 75) # divide by reference resistance
     #print(ammonia)
-    ammonia = ammonia_ppm(ammonia) # find ppm from Rs/Ro
+    #ammonia = ammonia_ppm(ammonia) # find ppm from Rs/Ro
     #print(ammonia)
     return ammonia
 
@@ -134,12 +135,13 @@ def ammonia_ppm(ammonia):
 
 def methane_test(channel, temp, humidity):
     methane = adc.read_adc(channel, gain = GAIN) # reads 12-bit ADC channel
-    methane = (4096.0/methane - 1)*36800 # calculate internal resistance
-    methane = correct_methane(methane, temp, humidity) # correct for temperature and humidity
-    methane = methane/correct_methane(1950000, 30, 75) # divide by reference resistance
+    #methane = (4096.0/methane - 1)*36800 # calculate internal resistance
+    #methane = correct_methane(methane, temp, humidity) # correct for temperature and humidity
+    #methane = methane/correct_methane(1950000, 30, 75) # divide by reference resistance
     #print(methane)
-    methane = methane_ppm(methane) # find ppm from Rs/Ro
+    #methane = methane_ppm(methane) # find ppm from Rs/Ro
     #print(methane)
+    methane = 0.8 * methane #agreeability with transmitter1 factor
     return methane
 
 def correct_methane(methane, temp, humidity):
@@ -217,7 +219,8 @@ def record():
         try:
             # select pressure sensor
             #pressure = "%0.2f" % pressure_test(pressure_addr)
-            pressure = "%0.2f" % bme_280()[1] / 10
+            pressure = "%0.2f" % (bme_280()[1]/10.0)
+            #pressure = pressure / 10.0
         except:
             print("Failure during pressure test")
             pressure = "null"
@@ -229,6 +232,8 @@ def record():
             # select temperature/humidity sensor
             temperature = "%0.2f" % bme_280()[0]
             humidity = "%0.2f" % bme_280()[2]
+            print(humidity)
+            print(temperature)
         except:
             print("Failure during temperature/humidity test")
             humidity = "null"
@@ -250,27 +255,30 @@ def record():
             print("Failure during ammonia test")
             ammonia = "null"
 
-        try: 
+        try:
+            #methane = adc.read_adc(channel, gain = GAIN)
             methane = "%.2f" % methane_test(0, float(temperature), float(humidity))
+            #print(methane)
         except:
             print("Failure during methane test")
             methane = "null"
             
         NO2 = 0 # we dont have an NO2 sensor    
-
-        timestamp = "{}/{}/{} {}:{}:{}".format(now.day, now.month, now.year, now.hour, now.minute, now.second)
+        
+        #timestamp = "{}/{}/{} {}:{}:{}".format(now.day, now.month, now.year, now.hour, now.minute, now.second)
+        timestamp = time.strftime("%e/%m/%G %H:%M:%S")
         #print("timestamp, methane [ppm], ammonia [ppm], pressure [hPa], temperature [C], humidity [%RH], light [Lux]")
-        print(timestamp + ", " + methane + ", " + ammonia + ", " + pressure + ", " + temperature + ", " + humidity + ", " + light)
+        #print(timestamp + ", " + methane + ", " + ammonia + ", " + pressure + ", " + temperature + ", " + humidity + ", " + light)
         csv_writer.writerow([timestamp, temperature, humidity, pressure, light, NO2, methane, ammonia])
         csv_file.close()
 
         # send over LoRa module
-        lora_string = "{},{},{},{},{},{},{},{}\n".format(tran_number, timestamp, temperature, humidity, pressure, light, NO2, methane, ammonia)
+        lora_string = "{},{},{},{},{},{},{},{},{}\n".format(tran_number, timestamp, temperature, humidity, pressure, light, NO2, methane, ammonia)
         port.write(lora_string.encode())
         #updateDrive(light, temperature, humidity, pressure, methane, ammonia)
 
 
-while(True):
-    record()
-    time.sleep(3)
+#while(True):
+record()
+ #   time.sleep(3)
 

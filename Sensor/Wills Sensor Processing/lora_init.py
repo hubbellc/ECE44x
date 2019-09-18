@@ -3,9 +3,10 @@
 import time
 import serial
 import os
+import datetime
 from timeit import default_timer as timer
 
-TIMEOUT = 30
+TIMEOUT = 2 * 60 # 2 min
 
 def getTime():
     year = 0
@@ -48,9 +49,9 @@ def getTime():
             print("set time")
 
             # Sets all time info
-            ct = datetime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
+            ct = datetime.datetime(year, month, day, hour, minute, second)
             print(ct)
-            os.system('sudo timedatectl set-time %s' % ct.strftime('%Y-%m-%d %H:%M:%S'))      
+            os.system("sudo timedatectl set-time '" + ct.strftime('%Y-%m-%d %H:%M:%S') + "'")      
             print("got it!")
 
     if(year < 2019):
@@ -82,7 +83,7 @@ if response[1:3] == "OK":
     port.write("AT+NA=00112233\n".encode()) # sets network address
     port.write("AT+NSK=00112233001122330011223300112233\n".encode()) # sets network session key
     port.write("AT+DSK=33221100332211003322110033221100\n".encode()) # sets data session key
-    port.write("AT+TXDR=DR2\n".encode()) # sets the transmit data rate (AS 923) //TODO, adjust to get better range!
+    port.write("AT+TXDR=DR0\n".encode()) # sets the transmit data rate (AS 923) //TODO, adjust to get better range!
     port.write("AT+TXF=920000000\n".encode()) # sets the transmit frequency (920000000 - 928000000) //TODO, adjust to get better range!
     port.write("AT+ACK=8\n".encode())
 
